@@ -1,0 +1,35 @@
+Expects to have:
+* IPython
+   => http://ipython.scipy.org/
+  or
+   sudo aptitude install ipython
+   (should be in your ubuntu/debian-repository)
+* XSB
+   => http://xsb.sourceforge.net/
+  or
+   sudo aptitude install xsb
+   from
+   deb http://autopoiesis.foi.hr/ubuntu ./
+* Flora2
+   => http://flora.sourceforge.net/
+  or
+   sudo aptitude install flora2
+   from
+   deb http://autopoiesis.foi.hr/ubuntu ./
+* ReasonablePy
+   => http://sourceforge.net/projects/reasonablepy/
+  or 
+   => https://github.com/johannesloetzsch/reasonablepy
+
+
+Test without Installing:
+* start IPython and enter
+  [IPython]> _ip.load('ipy_flora')
+* …use it…
+
+
+Installation:
+* sudo ./setup.py install
+* add the line
+	ip.load('ipy_flora.ipy_flora')
+  to your ~/.ipython/ipy_user_conf.py

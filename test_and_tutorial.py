@@ -185,4 +185,4 @@ if __name__ == '__main__':
     #ipy()  # can be used for debugging
 
     print '\nEverything seems to work :)'
-    print 'Now you can read the content of this file and to everything step by step yourself…'
+    print 'Now you can read the content of this file and do everything step by step yourself…'
