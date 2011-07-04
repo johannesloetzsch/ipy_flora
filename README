@@ -3,6 +3,9 @@ This Package contains:
   * a simple interface between flora2 and python
 * ipy_flora/ipy_flora.py
   * extends IPython for usage of rpsimple
+    * „magic“-Aliases for comfortable invocation
+    * TAB-Completion
+    * Help about defined facts and rules
 * test_tutorial.py
   * tests if installation is correct
   * contains help on how to use flora2 within (i)python
@@ -12,7 +15,7 @@ For details about installation see:
   INSTALL
 
 
-Usage:
+Features and Usage:
 * for a short introduction read:
   ipy_flora/ipy_flora.py
 * for a bigger example read: 
