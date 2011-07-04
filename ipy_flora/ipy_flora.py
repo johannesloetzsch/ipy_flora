@@ -272,6 +272,9 @@ if __name__ == '__main__':
     import IPython
     ipy = IPython.Shell.IPShellEmbed(user_ns=locals())
     IP = ipy.IP
+    if not hasattr(IP, 'flora_instance'):
+        print '\nYou should load „ipy_flora“ from your IPython-config — see INSTALL\n'
+        IP.api.load('ipy_flora.ipy_flora')
 
     import doctest, sys
     result = doctest.testmod(extraglobs=locals())

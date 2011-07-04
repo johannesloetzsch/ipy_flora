@@ -24,12 +24,12 @@ Expects to have:
 
 Test without Installing:
 * start IPython and enter
-  [IPython]> _ip.load('ipy_flora')
+  [IPython]> _ip.load('ipy_flora.ipy_flora')
 * …use it…
 
 
 Installation:
-* sudo ./setup.py install
+* sudo ./setup.py
 * add the line
 	ip.load('ipy_flora.ipy_flora')
   to your ~/.ipython/ipy_user_conf.py

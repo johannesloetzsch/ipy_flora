@@ -179,10 +179,18 @@ if __name__ == '__main__':
     print '\n===test tutorial==='
     (_, __, ___) = (None, None, None)  # export this variables to IPython
     ipy = IPython.Shell.IPShellEmbed(user_ns=locals())
+
+    warnings = ''
+    if not hasattr(ipy.IP, 'flora_instance'):
+        warnings += '\nYou should load „ipy_flora“ from your IPython-config — see INSTALL'
+        ipy.IP.api.load('ipy_flora.ipy_flora')
+
     result = doctest.testmod(extraglobs=locals())
     print result 
     assert result.failed == 0, 'Error while testing tutorial'
     #ipy()  # can be used for debugging
+    
+    print warnings
 
     print '\nEverything seems to work :)'
-    print 'Now you can read the content of this file and do everything step by step yourself…'
+    print 'Now you can read the content of test_and_tutorial.py and do everything step by step yourself…'
