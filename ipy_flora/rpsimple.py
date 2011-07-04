@@ -164,9 +164,9 @@ def testVarSecurity(var, raiseE=True):
     False
     """
     if type(var) == type(''):
-        if re.match('^[a-zA-Z0-9_?]*$', var) == None:
+        if re.match('^[a-zA-Z0-9_?()[\]]*$', var) == None:
             if raiseE:
-                raise InsecureVariable
+                raise InsecureVariable(var)
             return False
         return True
     elif type(var) == type([]):
