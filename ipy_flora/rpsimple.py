@@ -4,7 +4,7 @@
 simpler interface to Flora2:
 
 >>> f = Flora2()
->>> f.auto('p(23)', verbose=True, vverbose=True)
+>>> f.auto('p(23)', vverbose=True)
 [insert{p(23)}.]
 >>> f.auto('q(42).', verbose=True)
 [insert]
@@ -14,6 +14,28 @@ simpler interface to Flora2:
 [refresh: q(?Y)]
 [query for ['Y']]
 ['23', '42']
+>>> f.query_advanced('p(?X)', getTypeOf=['X'], vverbose=True)
+[refresh: p(?X)]
+[query(" ?TypesX = collectset{ ?_Type[?X] | p(?X), ?X:?_Type }. ", ['X', 'TypesX'])]
+[{'X': '23', 'TypesX': '[_decimal, _integer, _long, _object]'}]
+>>> f.query_advanced('q(?X)', convertTypeOf=['X'])
+[23, 42]
+>>> f.auto('p(' + f.py2f(None) + ')')
+>>> f.auto('p(3.141592653589)')
+>>> f.auto('p("double quoted list")')
+>>> f.auto('p(object)')
+>>> f.auto("p(''single quoted => object'')")
+>>> f.auto('p(' + f.py2f('„special“ chars\\n…') + ')')
+>>> for item in f.query_advanced('p(?X)', convertTypeOf=['X']):\
+    print str(type(item))[7:-2] + ': ' + str(item)
+NoneType: None
+float: 3.14159265359
+int: 23
+str: double quoted list
+str: object
+str: single quoted => object
+str: „special“ chars
+…
 """
 
 import doctest
@@ -28,16 +50,17 @@ class Flora2(rp.interface.Flora2):
         """default empty varlist"""
         return rp.interface.Flora2.query(self, expr, varlist)
 
-    def query_advanced(self, expr, varlist=None, verbose=False, formatResult=True):
+    def query_advanced(self, expr, varlist=None, verbose=False, vverbose=False, \
+                       formatResult=True, getTypeOf=[], convertTypeOf=[]):
         """advanced version of query"""
 
-        """complete and test expression"""
-        expr = self._uncomment_(expr)
-        expr += '.'
+        if vverbose:
+            verbose = True
 
-        assert re.match('^[^{]*:-[^}]*$', expr) == None, '„:-“ only within allowed „{ }“ allowed'
+        getTypeOf = set(getTypeOf + convertTypeOf[:1])  # Till now only for one item implemented
 
         """calculate varlist"""
+
         if varlist == None:
             varlist = []
             for match in re.finditer('\?(?P<var>[A-Z][a-zA-Z1-9_]*)', expr):
@@ -46,8 +69,17 @@ class Flora2(rp.interface.Flora2):
                 varlist.append(var)
                 varlist = list(set(varlist))
 
+        """ remove comments and strip """
+
+        expr = self._uncomment_(expr)
+
+        """complete and test"""
+
+        expr += '.'
+        assert re.match('^[^{]*:-[^}]*$', expr) == None, '„:-“ only within allowed „{ }“ allowed'
 
         """refresh (against problems with tabling)"""
+
         unrefreshable_expr = (True in [test in expr for test in ['{', '}', '@', '\\', '<']]) or \
                              re.match('.*[^-]>.*', expr) != None or \
                              re.match('.*:=:.*', expr) != None or \
@@ -60,16 +92,51 @@ class Flora2(rp.interface.Flora2):
             if verbose:
                 print '[refresh: ' + expr[:-1] + ']'
             self.query('refresh{' + expr[:-1] + '}.')
+
+        """expand query — get types of a variable"""
+
+        if len(getTypeOf) > 1:
+            raise NotImplementedError
+        for var in getTypeOf:
+            expr = '?Types' + var + ' = collectset{ ?_Type[?' + ',?'.join(varlist) + '] | ' + expr[:-1] + ', ?' + var + ':?_Type }.'
+            varlist.append('Types' + var)
+
+        """run query"""
+
         if verbose:
-            print '[query for ' + str(varlist) + ']'
+            if vverbose:
+                print '[query(" ' + expr + ' ", ' + str(varlist) + ')]'
+            else:
+                print '[query for ' + str(varlist) + ']'
         result =  self.query(expr, varlist)
+
+        """format result"""
 
         if not formatResult:
             """a stable format"""
             return (result, varlist)
-        return self.format_result(result, varlist)
+        return self.format_result(result, varlist, convertTypeOf)
 
-    def format_result(self, result, varlist):
+    def format_result(self, result, varlist, convertTypeOf=[]):
+        """convert flora-results to more pythonic types"""
+
+        """convert selected vars within result"""
+        for var in convertTypeOf:
+            for answer_count in range(len(result)):
+                answer_dict = result[answer_count]
+
+                if '_integer' in answer_dict['Types' + var]:
+                    answer_dict[var] = int(answer_dict[var])
+                elif '_decimal' in answer_dict['Types' + var]:
+                    answer_dict[var] = float(answer_dict[var])
+                elif '_none' in answer_dict['Types' + var]:
+                    answer_dict[var] = None
+                elif '_escaped' in answer_dict['Types' + var]:
+                    answer_dict[var] = self.unescape(answer_dict[var])
+
+                answer_dict.pop('Types' + var)
+            varlist.remove('Types' + var)
+
         """returns Boolean, List or ListOfDict depending on number of vars"""
         if varlist == []:
             if result == [{}]:
@@ -87,6 +154,9 @@ class Flora2(rp.interface.Flora2):
 
     def modifykb(self, expr, action=None, verbose=False, vverbose=False):
         """modify the knowledge-base (insert|delete[all])(fact|rule)"""
+
+        if vverbose:
+            verbose = True
 
         """complete expression"""
         expr = self._uncomment_(expr)
@@ -148,6 +218,50 @@ class Flora2(rp.interface.Flora2):
 
         return expr.strip()
 
+    def escape(self, string):
+        safe = string.encode('hex')
+        taged = "''escaped_" + safe
+        flora = taged + "'':_escaped"
+        assert self.unescape(flora) == string
+        return flora
+
+    def unescape(self, escaped):
+        assert type(escaped) == type(''), 'unexpected type: ' + str(type(escaped))
+        safe = re.match(".*escaped_(?P<safe>[^']*).*", escaped).groupdict()['safe']
+        return safe.decode('hex')
+
+    def string_fine_without_escaping(self, obj):
+        """
+        >>> Flora2().string_fine_without_escaping('ab_c([123])')
+        True
+        >>> Flora2().string_fine_without_escaping('Ä…@')
+        False
+        """
+        if not re.match('^[a-zA-Z0-9 _()\[\]]*$', obj):
+            return False
+
+        """should work, but let's test it…"""
+        test_str = '_test_' + obj
+        test_class = '_test_by_rpsimple'
+        self.auto("++ ''" + test_str + "'':" + test_class)
+        return_value = self.auto('?- ?X:' + test_class)
+        assert test_str in return_value, 'Expected „' + test_str + '“ not in „' + str(return_value) + '“!'
+        assert len(return_value) == 1, 'There was some other object in test_class!\n' \
+                                        + 'We are not as expected in an empty namespace'
+
+        self.auto("-- ''" + test_str + "'':" + test_class)
+        return True
+
+    def py2f(self, obj):
+        """translate a python-object to a flora-string"""
+        if type(obj) == type(None):
+            return '_:_none'
+        if type(obj) in [type(t) for t in ['', u'']]:
+            if self.string_fine_without_escaping(obj):
+                return "''" + obj + "''"
+            else:
+                return self.escape(obj)
+        return rp.py2f().translate(obj)
 
 class InsecureVariable(TypeError):
     """Exception"""
