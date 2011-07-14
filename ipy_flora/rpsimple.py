@@ -28,7 +28,7 @@ class Flora2(rp.interface.Flora2):
         """default empty varlist"""
         return rp.interface.Flora2.query(self, expr, varlist)
 
-    def query_advanced(self, expr, varlist=None, verbose=False):
+    def query_advanced(self, expr, varlist=None, verbose=False, formatResult=True):
         """advanced version of query"""
 
         """complete and test expression"""
@@ -64,7 +64,13 @@ class Flora2(rp.interface.Flora2):
             print '[query for ' + str(varlist) + ']'
         result =  self.query(expr, varlist)
 
-        """returns Boolean, List or Dict depending on number of vars"""
+        if not formatResult:
+            """a stable format"""
+            return (result, varlist)
+        return self.format_result(result, varlist)
+
+    def format_result(self, result, varlist):
+        """returns Boolean, List or ListOfDict depending on number of vars"""
         if varlist == []:
             if result == [{}]:
                 return True
