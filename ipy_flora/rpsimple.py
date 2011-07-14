@@ -164,7 +164,8 @@ def testVarSecurity(var, raiseE=True):
     False
     """
     if type(var) == type(''):
-        if re.match('^[a-zA-Z0-9_?()[\]]*$', var) == None:
+        #if re.match('^[a-zA-Z0-9_?()[\] ]*$', var) == None:
+        if re.match('^[a-zA-Z0-9_?()[\] "]*$', var) == None:
             if raiseE:
                 raise InsecureVariable(var)
             return False
@@ -178,6 +179,8 @@ def testVarSecurity(var, raiseE=True):
         if var.has_key('self'):  # for call with locals()
             var.pop('self')
         return testVarSecurity(var.values(), raiseE)
+    elif type(True):
+        return True
     else:
         assert False, 'Unknown type of input: ' + str(type(var))
 
