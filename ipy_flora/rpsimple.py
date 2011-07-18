@@ -22,6 +22,7 @@ simpler interface to Flora2:
 [23, 42]
 >>> f.auto('p(' + f.py2f(None) + ')')
 >>> f.auto('p(3.141592653589)')
+>>> f.auto('p([42, "foo"])')
 >>> f.auto('p("double quoted list")')
 >>> f.auto('p(object)')
 >>> f.auto("p(''single quoted => object'')")
@@ -31,6 +32,7 @@ simpler interface to Flora2:
 NoneType: None
 float: 3.14159265359
 int: 23
+list: ['42', 'foo']
 str: double quoted list
 str: object
 str: single quoted => object
@@ -133,6 +135,10 @@ class Flora2(rp.interface.Flora2):
                     answer_dict[var] = None
                 elif '_escaped' in answer_dict['Types' + var]:
                     answer_dict[var] = self.unescape(answer_dict[var])
+                elif '_list' in answer_dict['Types' + var] \
+                and answer_dict[var][0] == '[' and answer_dict[var][-1] == ']':
+                    answer_dict[var] = str2list(answer_dict[var])
+                    # content of list is not casted now
 
                 answer_dict.pop('Types' + var)
             varlist.remove('Types' + var)
@@ -363,6 +369,12 @@ def comperator(x, y):
         return comperator(x[1:], y[1:])
     return result / abs(result)
 
+
+def str2list(string):
+    result = [val.strip() for val in string[1:-1].split(',')]
+    if '' in result:
+        result.remove('')
+    return result
 
 if __name__ == '__main__':
     result = doctest.testmod()
