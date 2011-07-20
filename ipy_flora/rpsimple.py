@@ -45,6 +45,7 @@ import rp
 import re
 import itertools
 import sys
+import os
 
 class Flora2(rp.interface.Flora2):
 
@@ -208,6 +209,37 @@ class Flora2(rp.interface.Flora2):
             return self.query_advanced(expr[2:], **kwargs)
         else:
             return self.modifykb(expr, **kwargs)
+
+    def consult(self, filename, add=False, module='main'):
+        """Load/Add a file to knowledge base.
+        The optional argument „add“ circumvents overloading existing modules, but adds new knowledge."""
+        without_ext, ext = os.path.splitext(filename)
+        dirname, basename_without_ext = os.path.split(without_ext)
+
+        assert ext in ['', '.flr'], 'Bad extension: ' + ext
+        if ext == '':
+            filename += '.flr'
+        assert os.path.isdir(dirname), 'Dir not existing: ' + dirname
+        assert os.path.isfile(filename), 'File not existing: ' + filename
+
+        orig_dir = os.getcwd()
+        os.chdir(dirname)
+
+        if add:
+            plus = '+'
+        else:
+            plus = ''
+
+        self.query('[' + plus + basename_without_ext + '>>' + module + '].')
+
+        os.chdir(orig_dir)
+
+    def consult_dir(self, dirname, add=True, **kwargs):
+        """load all flora-files from directory"""
+        for filename in os.listdir(dirname):
+            if os.path.splitext(filename)[1] == '.flr':
+                self.consult(dirname + os.path.sep + filename, add=add, **kwargs)
+                add = True  # after first file all others are added
 
     def _uncomment_(self, expr):
         """remove comments"""
