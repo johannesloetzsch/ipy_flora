@@ -1,3 +1,5 @@
+ipy_flora — simpler interface to Flora2 and IPython extension
+
 This Package contains:
 * ipy_flora/rpsimple.py
   * a simple interface between flora2 and python
@@ -10,10 +12,8 @@ This Package contains:
   * tests if installation is correct
   * contains help on how to use flora2 within (i)python
 
-
 For details about installation see:
   INSTALL
-
 
 Features and Usage:
 * for a short introduction read:
